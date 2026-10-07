@@ -27,7 +27,6 @@ let package = Package(
       path: "Sources/SocialWireRedis",
       swiftSettings: [
         .swiftLanguageMode(.v6),
-        .unsafeFlags(["-warnings-as-errors"]),
       ]
     ),
     .testTarget(
@@ -39,7 +38,6 @@ let package = Package(
       path: "Tests/SocialWireRedisTests",
       swiftSettings: [
         .swiftLanguageMode(.v6),
-        .unsafeFlags(["-warnings-as-errors"]),
       ]
     ),
   ]
