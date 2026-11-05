@@ -15,6 +15,7 @@ public actor RediStackRedisClient: RedisCommandClient {
   private var resolvedAddress: SocketAddress
   private var addressRefreshState = RedisAddressRefreshState()
   private var lastFailureLogAt = Date.distantPast
+  private var isShutDown = false
   private static let failureLogCooldown: TimeInterval = 60
 
   public init(
@@ -158,6 +159,8 @@ public actor RediStackRedisClient: RedisCommandClient {
   }
 
   public func shutdown() async throws {
+    guard !isShutDown else { return }
+    isShutDown = true
     let promise = pool.eventLoop.makePromise(of: Void.self)
     pool.close(promise: promise)
     try await promise.futureResult.get()
@@ -168,6 +171,7 @@ public actor RediStackRedisClient: RedisCommandClient {
     operation: String,
     body: @escaping @Sendable () async throws -> Value
   ) async throws -> Value {
+    guard !isShutDown else { throw RedisClientClosedError() }
     let startedAt = Date()
     do {
       // Pool acquisition is bounded by connectionRetryTimeout; once written,
@@ -201,6 +205,7 @@ public actor RediStackRedisClient: RedisCommandClient {
   }
 
   private func refreshConnectionAddressIfNeeded(now: Date) {
+    guard !isShutDown else { return }
     guard addressRefreshState.beginRefreshIfAllowed(now: now) else { return }
     do {
       let address = try SocketAddress.makeAddressResolvingHost(redisHost, port: redisPort)
